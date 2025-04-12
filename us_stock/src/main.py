@@ -1,10 +1,22 @@
-import yfinance as yf
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
+from app.stock_data import get_stock_data
+from app.stock_model import predict_stock_price
 
-def get_stock_data(stock_symbol, start_date, end_date):
-    # 獲取股票歷史數據
-    stock_data = yf.download(stock_symbol, start=start_date, end=end_date)
-    return stock_data
+app = FastAPI()
 
-# 範例：獲取蘋果公司過去1年的股票數據
-stock_data = get_stock_data("AAPL", "2023-04-01", "2024-04-01")
-print(stock_data.head())
+class StockRequest(BaseModel):
+    stock_symbol: str
+    start_date: str
+    end_date: str
+
+@app.post("/get_stock_data/")
+def get_stock_data_endpoint(request: StockRequest):
+    stock_data = get_stock_data(request.stock_symbol, request.start_date, request.end_date)
+    return stock_data.to_dict()
+
+@app.post("/predict_stock_price/")
+def predict_stock_price_endpoint(request: StockRequest):
+    predicted_stock_price = predict_stock_price(request.stock_symbol, request.start_date, request.end_date)
+    return {"predicted_price": predicted_stock_price.tolist()}
